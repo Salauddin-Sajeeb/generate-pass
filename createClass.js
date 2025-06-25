@@ -1,4 +1,3 @@
-
 const { google } = require('googleapis');
 const key = require('./wallet-service.json');
 require('dotenv').config();
@@ -24,9 +23,17 @@ async function createClass() {
       }
     },
     venue: {
-      defaultValue: {
-        language: "en-US",
-        value: "Virtual"
+      name: {
+        defaultValue: {
+          language: "en-US",
+          value: "Virtual Event Platform"
+        }
+      },
+      address: {
+        defaultValue: {
+          language: "en-US",
+          value: "123 Web St, Internet City, IC 00000"
+        }
       }
     }
   };
