@@ -1,5 +1,7 @@
 
 const express = require('express');
+const app = express();
+app.use(express.json());
 const cors = require('cors');
 app.use(cors({
   origin: 'https://alfread648.wixsite.com/pass-generator',  // Replace with your actual Wix domain
@@ -11,9 +13,6 @@ const { google } = require('googleapis');
 require('dotenv').config();
 const key = require('./wallet-service.json');
 const jwt = require('jsonwebtoken');
-
-const app = express();
-app.use(express.json());
 
 const auth = new google.auth.GoogleAuth({
   credentials: key,
