@@ -3,11 +3,25 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 const cors = require('cors');
+const allowedOrigins = [
+  'https://alfread648.wixsite.com',
+  'https://alfread648.wixsite.com/pass-generator',
+  'https://editor.wix.com',
+  undefined  // for local tools like Postman or curl
+];
+
 app.use(cors({
-  origin: 'https://alfread648.wixsite.com/pass-generator',  // Replace with your actual Wix domain
-  methods: ['POST', 'GET'],
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type']
 }));
+
 
 const { google } = require('googleapis');
 require('dotenv').config();
