@@ -1,2 +1,4 @@
 .env
 wallet-service.json
+createClass.js
+node_modules
