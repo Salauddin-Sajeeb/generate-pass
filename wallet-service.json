@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "aerial-summit-463808-j2",
+  "private_key_id": "37d1513293b80f0e961dc33f1b0e75b916b9612c",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCpD3ylIACP6JqN\nN5AsCQS0A+MnVBBuhLb6g6WJkL8tEjKt6Skb5fwO+qYYE/WCX7N3IZw7biG/hNG+\n8lsWCGtWinV0FJZta1Rc3506KD3bZw8UDuU4yhdXXEtQAAfpISO8f3VlXoX0wJBS\niP/Z9N7nNF85B0HZS/JbQ2wwvzO0fHpjkjqWLyIApXBVGcQC+pT5CfAh2qakerwG\nfs4c5M6KDCcm0YRzTVKEBM1ls3LcGrORtAzLZRW513F5HrHQOSwhv0D4NawBaMeE\nEXa/3OlBnp9Xe22LIxiz9M97LzpMh7iCPI8H5Kb9E9xl2BgHzk4JKCYyW1FCxBQO\nwcFyil9jAgMBAAECggEADuqpZk5tDkWJQXWKGICRNCr1o3Y03vOBy5fLBtjJLXpi\nE1szv9zqgQ3Xkt9L9b1o8dV62fmNK79V3GG47LhAdEnSNDRO04e5UVp/nm6HirDM\nsUnhKsIWDiS8FmpySD0e0JZ0bsXIzwAgm8+vt3T2J/NEhZ0gz8H2N9w6kxCDyORf\n7dD0XZuebzGXjN2O/aB05hGPvmMmXluCSBX2gaOGscDzStqSx7/ryx3+NczKkn6u\n2hIX8kIN2Yq9vJfnnC/mBZrvl/gEsfvmI2Ql9u9EmqkQ7KQLfjFl56zdREkpaPRZ\nbpL+Y5n9X9gzEF0Zub8fn2uTZoxV3ni7BwDrmP+zMQKBgQDkrPBq3eH+DlxBBNbM\nd0MW6Zdg940GeFQMuMet79cVR1no5HXDBsTxr/dIlgKSFR8f+BZxdIkhfmb7VGY4\nbO/4Jn7GpHOE2m0TzKeBffue93BOkEa3ITR/x502BOEqmaga8oT5cVrDQp7nz46T\nMEJD2qcJg4JLu9MMYkDnXnAScQKBgQC9QvSt+3Y+oNjmxssyX9iVkUDZw9duejUL\nc1XVwEbuCrsNGrgfQ+eati3Sj6ycis5y0/Iez2NriiZnsjTB5odI2vUpx4YAuXk0\n0kvQxiGBGd+H174gGfuFMm8ni330VXL6bJz05n+TS1qvMEzsgq9rImMl7iVCw14j\nHJ+Mt7eREwKBgH/Sb1y9BCr3qfeqFcsaywSOs9A+77RzJEAsNWlzjB1X0dkNgwnt\nyb5zJt2LBIrVhZ1gFmN6yYBQYI4SIkVeF1D1a53rpKrZUWlk1yjZ3AGCvGMd4HlS\n9T6LvMPKPHaMh1vwvgWUqDBHF/3plf+OVSwKl54IxZdBuPnOHgt2TVzxAoGBAK0+\nGucfZW+SoLkug1XLMmBGo8wyXoL8To36tzmAVe0T2YD3Uk8cQ2b1GCDD70ckMDIg\nHGNjhygrP1hwYaaUNIXWF9B0mQ8UuARH86pZktWwL1MTgy+zWO7l6aWTJGqBxUvC\nHDJ4w5K6yXnPhrqALb6trYBM68KfPw545vtSODANAoGBAM+1JFucbHweH+BEZyTJ\nufRt/NXQPRzVp1IDTGQg+ffWSzYwQXrpQJFNSwYDan6pkvbwE+Rco+0yczK3g5Xh\n6jpiI/0Iq3fwTWuDE2cbel0+MWC2Jf6rb4dfXjzrPtf+EscaulmFK/g4WRGe3sso\nPaX8/h8Ndkf3kBwLHenV+od4\n-----END PRIVATE KEY-----\n",
+  "client_email": "google-wallet@aerial-summit-463808-j2.iam.gserviceaccount.com",
+  "client_id": "109038758423618826982",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/google-wallet%40aerial-summit-463808-j2.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
