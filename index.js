@@ -23,18 +23,14 @@ app.use(cors({
 }));
 
 const { google } = require('googleapis');
-const jwt = require('jsonwebtoken');
+const { JWT } = require('google-auth-library'); // ✅ Use this to sign JWT correctly
 require('dotenv').config();
-const key = require('./wallet-service.json'); // Your valid service account key
+const key = require('./wallet-service.json'); // ✅ Valid service account JSON
 
-const auth = new google.auth.GoogleAuth({
-  credentials: key,
-  scopes: ['https://www.googleapis.com/auth/wallet_object.issuer']
-});
+const issuerId = process.env.ISSUER_ID;
 
 app.post('/generate-pass', async (req, res) => {
   const { name, surname, email, points } = req.body;
-  const issuerId = process.env.ISSUER_ID;
 
   if (!email || !name || !surname || !points) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -69,10 +65,15 @@ app.post('/generate-pass', async (req, res) => {
   };
 
   try {
+    const auth = new google.auth.GoogleAuth({
+      credentials: key,
+      scopes: ['https://www.googleapis.com/auth/wallet_object.issuer']
+    });
+
     const client = await auth.getClient();
     const wallet = google.walletobjects({ version: 'v1', auth: client });
 
-    // Ensure the class exists (create if missing)
+    // Check or create class
     try {
       await wallet.eventticketclass.get({ resourceId: classId });
     } catch (classError) {
@@ -83,7 +84,7 @@ app.post('/generate-pass', async (req, res) => {
       }
     }
 
-    // Insert the pass object
+    // Insert pass object
     try {
       await wallet.eventticketobject.insert({ requestBody: passPayload });
     } catch (insertError) {
@@ -94,25 +95,32 @@ app.post('/generate-pass', async (req, res) => {
           details: insertError.message
         });
       }
-      // 409 = object already exists
     }
 
-    // Build JWT for save link
+    // ✅ Use google-auth-library to sign the custom JWT correctly
+    const jwtSigner = new JWT({
+      email: key.client_email,
+      key: key.private_key,
+      keyId: key.private_key_id
+    });
+
     const jwtPayload = {
       iss: key.client_email,
       aud: 'google',
       typ: 'savetowallet',
       payload: {
-        eventTicketObjects: [{ id: objectId }]
+        eventTicketObjects: [
+          {
+            id: objectId
+          }
+        ]
       }
     };
 
-    const token = jwt.sign(jwtPayload, key.private_key, {
+    const token = require('jsonwebtoken').sign(jwtPayload, key.private_key, {
       algorithm: 'RS256',
       header: {
-        kid: key.private_key_id,
-        typ: 'JWT',
-        alg: 'RS256'
+        kid: key.private_key_id
       }
     });
 
