@@ -1,14 +1,18 @@
 const express = require('express');
 const app = express();
-require('dotenv').config();
-app.use(express.json());
-console.log("ISSUER:", process.env.ISSUER_ID);
 const cors = require('cors');
+const { google } = require('googleapis');
+const { JWT } = require('google-auth-library');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
+app.use(express.json());
+
 const allowedOrigins = [
   'https://alfread648.wixsite.com',
   'https://alfread648.wixsite.com/pass-generator',
   'https://editor.wix.com',
-  undefined // for Postman/local dev
+  undefined
 ];
 
 app.use(cors({
@@ -23,12 +27,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
-const { google } = require('googleapis');
-const { JWT } = require('google-auth-library'); // ✅ Use this to sign JWT correctly
-require('dotenv').config();
-const key = require('./wallet-service.json'); // ✅ Valid service account JSON
-
+const key = require('./wallet-service.json');
 const issuerId = process.env.ISSUER_ID;
+
+console.log('✅ Loaded ISSUER_ID:', issuerId);
 
 app.post('/generate-pass', async (req, res) => {
   const { name, surname, email, points } = req.body;
@@ -47,10 +49,14 @@ app.post('/generate-pass', async (req, res) => {
     eventName: {
       defaultValue: {
         language: "en-US",
-        value: "Your Event"
+        value: "Sample Event"
       }
     },
-    reviewStatus: "UNDER_REVIEW" // Use "APPROVED" in production
+    venue: {
+      name: "Online Event Venue",
+      address: "123 Internet Blvd, Cloud City, Web"
+    },
+    reviewStatus: "UNDER_REVIEW"
   };
 
   const passPayload = {
@@ -74,7 +80,7 @@ app.post('/generate-pass', async (req, res) => {
     const client = await auth.getClient();
     const wallet = google.walletobjects({ version: 'v1', auth: client });
 
-    // Check or create class
+    // Ensure the class exists
     try {
       await wallet.eventticketclass.get({ resourceId: classId });
     } catch (classError) {
@@ -85,12 +91,11 @@ app.post('/generate-pass', async (req, res) => {
       }
     }
 
-    // Insert pass object
+    // Insert the object
     try {
       await wallet.eventticketobject.insert({ requestBody: passPayload });
     } catch (insertError) {
       if (insertError.code !== 409) {
-        console.error("Insert error:", insertError);
         return res.status(500).json({
           error: 'Failed to insert pass object',
           details: insertError.message
@@ -98,39 +103,30 @@ app.post('/generate-pass', async (req, res) => {
       }
     }
 
-    // ✅ Use google-auth-library to sign the custom JWT correctly
-    const jwtSigner = new JWT({
-      email: key.client_email,
-      key: key.private_key,
-      keyId: key.private_key_id
-    });
-
+    // Create the JWT for Save to Google Wallet
+    const now = Math.floor(Date.now() / 1000);
     const jwtPayload = {
       iss: key.client_email,
-      aud: 'google',
+      aud: 'https://www.googleapis.com/oauth2/v4/token',
       typ: 'savetowallet',
+      iat: now,
+      exp: now + 3600,
       payload: {
-        eventTicketObjects: [
-          {
-            id: objectId
-          }
-        ]
+        eventTicketObjects: [{ id: objectId }]
       }
     };
 
-    const token = require('jsonwebtoken').sign(jwtPayload, key.private_key, {
+    const token = jwt.sign(jwtPayload, key.private_key, {
       algorithm: 'RS256',
-      header: {
-        kid: key.private_key_id
-      }
+      header: { kid: key.private_key_id }
     });
 
     const saveUrl = `https://pay.google.com/gp/v/save/${token}`;
-    res.status(200).json({ walletUrl: saveUrl });
+    return res.status(200).json({ walletUrl: saveUrl });
 
   } catch (e) {
-    console.error('Error generating pass:', e);
-    res.status(500).json({ error: "Failed to generate pass", details: e.message });
+    console.error('❌ Error generating pass:', e);
+    return res.status(500).json({ error: 'Failed to generate pass', details: e.message });
   }
 });
 
