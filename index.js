@@ -1,7 +1,8 @@
 const express = require('express');
 const app = express();
+require('dotenv').config();
 app.use(express.json());
-
+console.log("ISSUER:", process.env.ISSUER_ID);
 const cors = require('cors');
 const allowedOrigins = [
   'https://alfread648.wixsite.com',
