@@ -1,18 +1,19 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
 const { google } = require('googleapis');
-const { JWT } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 require('dotenv').config();
 
+const app = express();
 app.use(express.json());
 
+// Allow Wix editor + site
 const allowedOrigins = [
   'https://alfread648.wixsite.com',
   'https://alfread648.wixsite.com/pass-generator',
   'https://editor.wix.com',
-  undefined
+  undefined // for local testing
 ];
 
 app.use(cors({
@@ -27,83 +28,84 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
+// Load service account key
 const key = require('./wallet-service.json');
 const issuerId = process.env.ISSUER_ID;
 
-console.log('✅ Loaded ISSUER_ID:', issuerId);
+// Google Auth setup
+const auth = new google.auth.GoogleAuth({
+  credentials: key,
+  scopes: ['https://www.googleapis.com/auth/wallet_object.issuer']
+});
 
+// POST route to generate pass
 app.post('/generate-pass', async (req, res) => {
   const { name, surname, email, points } = req.body;
 
-  if (!email || !name || !surname || !points) {
-    return res.status(400).json({ error: "Missing required fields" });
+  if (!name || !surname || !email || !points) {
+    return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const userId = email.replace(/[^a-zA-Z0-9]/g, '_');
-  const objectId = `${issuerId}.${userId}_eventpass`;
-  const classId = `${issuerId}.sample_event_class`;
-
-  const classPayload = {
-    id: classId,
-    issuerName: "Your Brand",
-    eventName: {
-      defaultValue: {
-        language: "en-US",
-        value: "Sample Event"
-      }
-    },
-    venue: {
-      name: "Online Event Venue",
-      address: "123 Internet Blvd, Cloud City, Web"
-    },
-    reviewStatus: "UNDER_REVIEW"
-  };
-
-  const passPayload = {
-    id: objectId,
-    classId: classId,
-    state: "ACTIVE",
-    barcode: {
-      type: "QR_CODE",
-      value: email
-    },
-    ticketHolderName: `${name} ${surname}`,
-    ticketNumber: `POINTS-${points}`
-  };
-
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: key,
-      scopes: ['https://www.googleapis.com/auth/wallet_object.issuer']
-    });
-
     const client = await auth.getClient();
     const wallet = google.walletobjects({ version: 'v1', auth: client });
 
-    // Ensure the class exists
+    const userId = email.replace(/[^a-zA-Z0-9]/g, '_');
+    const objectId = `${issuerId}.${userId}_eventpass`;
+    const classId = `${issuerId}.sample_event_class`;
+
+    // Create class if not exists
     try {
       await wallet.eventticketclass.get({ resourceId: classId });
-    } catch (classError) {
-      if (classError.code === 404) {
-        await wallet.eventticketclass.insert({ requestBody: classPayload });
+    } catch (error) {
+      if (error.code === 404) {
+        await wallet.eventticketclass.insert({
+          requestBody: {
+            id: classId,
+            issuerName: "Your Brand Name",
+            eventName: {
+              defaultValue: {
+                language: "en-US",
+                value: "My Event Ticket"
+              }
+            },
+            venue: {
+              name: "Online Venue",
+              address: "123 Cloud Blvd"
+            },
+            reviewStatus: "UNDER_REVIEW"
+          }
+        });
       } else {
-        throw classError;
+        throw error;
       }
     }
 
-    // Insert the object
+    // Create the object
     try {
-      await wallet.eventticketobject.insert({ requestBody: passPayload });
-    } catch (insertError) {
-      if (insertError.code !== 409) {
+      await wallet.eventticketobject.insert({
+        requestBody: {
+          id: objectId,
+          classId: classId,
+          state: "ACTIVE",
+          barcode: {
+            type: "QR_CODE",
+            value: email
+          },
+          ticketHolderName: `${name} ${surname}`,
+          ticketNumber: `POINTS-${points}`
+        }
+      });
+    } catch (error) {
+      if (error.code !== 409) {
         return res.status(500).json({
           error: 'Failed to insert pass object',
-          details: insertError.message
+          details: error.message
         });
       }
     }
 
-    // Create the JWT for Save to Google Wallet
+    // Generate the JWT for "Save to Wallet"
     const now = Math.floor(Date.now() / 1000);
     const jwtPayload = {
       iss: key.client_email,
@@ -117,24 +119,28 @@ app.post('/generate-pass', async (req, res) => {
     };
 
     const token = jwt.sign(jwtPayload, key.private_key, {
-      algorithm: 'RS256',
-      header: { kid: key.private_key_id }
+      algorithm: 'RS256'
     });
 
-    const saveUrl = `https://pay.google.com/gp/v/save/${token}`;
-    return res.status(200).json({ walletUrl: saveUrl });
+    const walletUrl = `https://pay.google.com/gp/v/save/${token}`;
+    return res.status(200).json({ walletUrl });
 
-  } catch (e) {
-    console.error('❌ Error generating pass:', e);
-    return res.status(500).json({ error: 'Failed to generate pass', details: e.message });
+  } catch (error) {
+    console.error("❌ Error:", error);
+    return res.status(500).json({
+      error: 'Failed to generate pass',
+      details: error.message
+    });
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("✅ Render backend is running");
+// Test route
+app.get('/', (req, res) => {
+  res.send('✅ Wallet pass backend is running');
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
