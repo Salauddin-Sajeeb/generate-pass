@@ -1,3 +1,4 @@
+// index.js
 const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
@@ -7,17 +8,10 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
-// CORS for Wix + testing
-const allowedOrigins = [
-  'https://alfread648.wixsite.com',
-  'https://alfread648.wixsite.com/pass-generator',
-  'https://editor.wix.com',
-  undefined
-];
-
+// 🔐 CORS (allow Wix + Postman)
 app.use(cors({
   origin: (origin, callback) => {
-    if (allowedOrigins.includes(origin) || !origin) {
+    if (!origin || origin.includes('wixsite.com') || origin.includes('editor.wix.com')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -27,7 +21,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
-// Load service account credentials
+// 🔑 Load service account key
 const key = require('./wallet-service.json');
 const issuerId = process.env.ISSUER_ID;
 
@@ -36,7 +30,7 @@ const auth = new google.auth.GoogleAuth({
   scopes: ['https://www.googleapis.com/auth/wallet_object.issuer']
 });
 
-// POST: /generate-pass
+// 🎟️ Generate Pass Route
 app.post('/generate-pass', async (req, res) => {
   const { name, surname, email, points } = req.body;
 
@@ -52,7 +46,7 @@ app.post('/generate-pass', async (req, res) => {
     const objectId = `${issuerId}.${userId}_eventpass`;
     const classId = `${issuerId}.sample_event_class`;
 
-    // Create class if it doesn't exist
+    // ✅ Ensure the class exists
     try {
       await wallet.eventticketclass.get({ resourceId: classId });
     } catch (error) {
@@ -81,7 +75,7 @@ app.post('/generate-pass', async (req, res) => {
                 }
               }
             },
-            reviewStatus: "UNDER_REVIEW"
+            reviewStatus: "UNDER_REVIEW" // Set to APPROVED once reviewed
           }
         });
       } else {
@@ -89,12 +83,12 @@ app.post('/generate-pass', async (req, res) => {
       }
     }
 
-    // Create object (pass)
+    // ✅ Insert or ignore object
     try {
       await wallet.eventticketobject.insert({
         requestBody: {
           id: objectId,
-          classId: classId,
+          classId,
           state: "ACTIVE",
           barcode: {
             type: "QR_CODE",
@@ -113,14 +107,11 @@ app.post('/generate-pass', async (req, res) => {
       }
     }
 
-    // Generate JWT for Save to Wallet
-    const now = Math.floor(Date.now() / 1000);
+    // ✅ Create JWT (Save to Wallet)
     const jwtPayload = {
       iss: key.client_email,
-      aud: 'https://www.googleapis.com/oauth2/v4/token',
+      aud: 'google',
       typ: 'savetowallet',
-      iat: now,
-      exp: now + 3600,
       payload: {
         eventTicketObjects: [{ id: objectId }]
       }
@@ -142,7 +133,7 @@ app.post('/generate-pass', async (req, res) => {
   }
 });
 
-// Health check
+// ✅ Health Check
 app.get('/', (req, res) => {
   res.send('✅ Google Wallet Pass Generator is running');
 });
