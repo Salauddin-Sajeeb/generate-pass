@@ -8,7 +8,7 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
-// 🔐 CORS (allow Wix + Postman)
+// ✅ CORS Setup for Wix + Postman
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || origin.includes('wixsite.com') || origin.includes('editor.wix.com')) {
@@ -21,7 +21,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
-// 🔑 Load service account key
+// 🔐 Load Service Account Key
 const key = require('./wallet-service.json');
 const issuerId = process.env.ISSUER_ID;
 
@@ -30,7 +30,7 @@ const auth = new google.auth.GoogleAuth({
   scopes: ['https://www.googleapis.com/auth/wallet_object.issuer']
 });
 
-// 🎟️ Generate Pass Route
+// 🎟️ Generate Google Wallet Pass
 app.post('/generate-pass', async (req, res) => {
   const { name, surname, email, points } = req.body;
 
@@ -46,7 +46,7 @@ app.post('/generate-pass', async (req, res) => {
     const objectId = `${issuerId}.${userId}_eventpass`;
     const classId = `${issuerId}.sample_event_class`;
 
-    // ✅ Ensure the class exists
+    // ✅ Create class if not exists
     try {
       await wallet.eventticketclass.get({ resourceId: classId });
     } catch (error) {
@@ -75,7 +75,7 @@ app.post('/generate-pass', async (req, res) => {
                 }
               }
             },
-            reviewStatus: "UNDER_REVIEW" // Set to APPROVED once reviewed
+            reviewStatus: "UNDER_REVIEW" // Change to "APPROVED" once in production
           }
         });
       } else {
@@ -83,7 +83,7 @@ app.post('/generate-pass', async (req, res) => {
       }
     }
 
-    // ✅ Insert or ignore object
+    // ✅ Insert object with visible user data
     try {
       await wallet.eventticketobject.insert({
         requestBody: {
@@ -95,7 +95,21 @@ app.post('/generate-pass', async (req, res) => {
             value: email
           },
           ticketHolderName: `${name} ${surname}`,
-          ticketNumber: `POINTS-${points}`
+          ticketNumber: `POINTS-${points}`,
+          textModulesData: [
+            {
+              header: "Full Name",
+              body: `${name} ${surname}`
+            },
+            {
+              header: "Email",
+              body: email
+            },
+            {
+              header: "Points Earned",
+              body: `${points} Points`
+            }
+          ]
         }
       });
     } catch (error) {
@@ -107,7 +121,7 @@ app.post('/generate-pass', async (req, res) => {
       }
     }
 
-    // ✅ Create JWT (Save to Wallet)
+    // ✅ Generate JWT URL
     const jwtPayload = {
       iss: key.client_email,
       aud: 'google',
@@ -138,6 +152,7 @@ app.get('/', (req, res) => {
   res.send('✅ Google Wallet Pass Generator is running');
 });
 
+// 🚀 Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
